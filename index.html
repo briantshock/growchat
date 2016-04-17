@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Grow developer test</title>
+		<meta name="description" content="Grow developer test" />
+		<meta name="google-signin-client_id" content="620021849104-qh0md2p8tobaflg0lficc0tek17qcqmc.apps.googleusercontent.com">
+		<style>
+			body {
+			  background: #efeeea;
+			  font-family: Helvetica;
+			  color: #3a3532;
+			  font-size: 14px;
+			  line-height: 18px;
+			  background-size: 20px 20px;
+			  background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0) 90%, rgba(47, 43, 40, 0.075) 98%);
+			  background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 90%, rgba(47, 43, 40, 0.075) 98%);
+			}
+
+			.current_rooms_list:before, .current_rooms_list:after, #chat_room:before, #chat_room:after {
+			  content: "";
+			  display: table;
+			}
+			.current_rooms_list:after, #chat_room:after {
+			  clear: both;
+			}
+
+			* {
+			  box-sizing: border-box;
+			}
+
+			.hidden {
+			  display: none;
+			}
+
+			button, input {
+			  border: none;
+			  box-shadow: none;
+			  border-radius: 5px;
+			}
+
+			button {
+			  color: white;
+			  background: #b25538;
+			  text-transform: uppercase;
+			  cursor: pointer;
+			}
+
+			input {
+			  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.1);
+			}
+
+			ul {
+			  list-style: none;
+			  margin: 0;
+			  padding: 0;
+			}
+
+			[id^="modal"] {
+			  position: absolute;
+			  width: 500px;
+			  left: 50%;
+			  margin-left: -250px;
+			  top: 20vh;
+			  padding: 5vh 0;
+			  text-align: center;
+			  background: #efeeea;
+			  border: solid 2px #2f2b28;
+			  border-radius: 3px;
+			}
+			[id^="modal"] button, [id^="modal"] input {
+			  font-size: 15px;
+			  line-height: 45px;
+			  height: 45px;
+			}
+			[id^="modal"] button {
+			  padding: 0 25px;
+			}
+			[id^="modal"]:not(.hidden) {
+			  z-index: 1000;
+			}
+			[id^="modal"] input {
+			  padding: 0 10px;
+			  margin-right: 5px;
+			}			
+			#modal_view_history {
+			  width: 55%;
+			  height: 600px;
+			  left: 35%;				
+			  padding: 3vh 0;
+			}
+			#close_history_form {
+			  padding-top: 10px;
+			}
+			#shadow_cover {
+			  position: fixed;
+			  top: 0;
+			  left: 0;
+			  right: 0;
+			  bottom: 0;
+			  background: rgba(0, 0, 0, 0.85);
+			  z-index: 1;
+			}
+			#create_new_room {
+			  cursor: pointer;
+			}			
+			#history_items {
+				height: 80%;
+				overflow: auto;
+				border: #B1B1B1;
+				border-style: ridge;
+			}			
+			#search_history_form {
+				padding-bottom: 10px;
+			}
+			#chat_room {
+			  padding: 100px;
+			}
+			#chat_room .user_list, #chat_room .main {
+			  float: left;
+			}
+			#chat_room .user_list {
+			  width: 20%;
+			  background: white;
+			  padding: 25px;
+			  border-radius: 5px;
+			  overflow: auto;
+			  height: 650px;
+			}
+			#chat_room .user_list .header {
+			  font-size: 20px;
+			  margin-bottom: 15px;
+			}
+			#chat_room .user_list li {
+			  text-overflow: ellipsis;
+			  overflow: hidden;
+			  width: 100%;
+			  line-height: 20px;
+			  font-style: italic;
+			}
+			#chat_room .user_list li :hover{
+			  background: #D1D1D1;
+			}
+			#chat_room .user_list li:not(:last-of-type) {
+			  margin-bottom: 5px;
+			}
+			#chat_room .avatar {
+				width: 40px;
+				height: 40px;
+				float: left;
+			}
+			#chat_room .chatter_name {
+				line-height: 40px;
+				height: 40px;
+				padding-left: 4px;
+				float: left;
+			}
+			#chat_room .main {
+			  width: 80%;
+			  padding-right: 50px;
+			}
+			#chat_room .main .current_rooms_list {
+			  text-align: right;
+			}
+			#chat_room .main .current_rooms_list li {
+			  cursor: pointer;
+			  float: right;
+			  background: white;
+			  font-size: 16px;
+			  padding: 0 20px;
+			  line-height: 40px;
+			  height: 40px;
+			  border-radius: 5px 5px 0 0;
+			  margin-left: 5px;
+			}
+			#chat_room .main .current_rooms_list li :hover {		
+			  background: #a13326;
+			}
+			
+			#chat_room .main .current_rooms_list li.active {
+			  background: #b25538;
+			  color: white;
+			}
+			#chat_room .main .messages_window {
+			  background: white;
+			  padding: 30px;
+			  border-top: solid 3px #b25538;
+			  box-shadow: 0 0 0 -1px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.1);
+			  height: 60vh;
+			}
+			#chat_room .main .messages_window ul {
+			  overflow: scroll;
+			  height: 100%;
+			}
+			#chat_room .main .messages_window .messages_list_item {
+			  white-space: nowrap;
+			  position: relative;
+			}
+			#chat_room .main .messages_window .messages_list_item.private {			  
+			  color: purple;
+			  font-style: italic;
+			}
+			#chat_room .main .messages_window .messages_list_item .avatar {
+			  width: 40px;
+			  height: 40px;
+			  border-radius: 50%;
+			  position: absolute;
+			  background-image: url("https://lh6.googleusercontent.com/-donwm0Gzz4o/AAAAAAAAAAI/AAAAAAAACH8/k0Yv6D2ynz4/s46-c-k-no/photo.jpg");
+			}
+			#chat_room .main .messages_window .messages_list_item .avatar, #chat_room .main .messages_window .messages_list_item .message {
+			  display: inline-block;
+			  vertical-align: top;
+			}
+			#chat_room .main .messages_window .messages_list_item .user {
+			  font-style: italic;
+			  color: #9a9089;
+			  font-size: 12px;
+			  margin-left: 55px;
+			}
+			#chat_room .main .messages_window .messages_list_item .message {
+			  width: calc(100% - 40px);
+			  padding-left: 55px;
+			  white-space: normal;
+			  margin-bottom: 5px;
+			}
+			#chat_room .main .messages_window .messages_list_item:not(:last-of-type) {
+			  margin-bottom: 25px;
+			}
+			#chat_room .main .messages_window [data-user="Ricky"] .avatar {
+			  background-image: url("https://lh3.googleusercontent.com/-zoJpQbS_9J4/AAAAAAAAAAI/AAAAAAAAAB8/hnGrLLKheU4/s46-c-k-no/photo.jpg");
+			}
+			#chat_room .main .messages_window [data-user="Nathan"] .avatar {
+			  background-image: url("https://lh3.googleusercontent.com/-6Cv5f2PzcZc/AAAAAAAAAAI/AAAAAAAAAFE/-dM0v2gsyO4/s46-c-k-no/photo.jpg");
+			}
+			#chat_room .main .entry_field {
+			  margin-top: 15px;
+			}
+			#chat_room .main .entry_field input, #chat_room .main .entry_field button {
+			  float: left;
+			  font-size: 18px;
+			  line-height: 50px;
+			  height: 50px;
+			}
+			#chat_room .main .entry_field input {
+			  width: 70%;
+			  padding: 0 15px;
+			}
+			#chat_room .main .entry_field button {
+			  float: right;
+			  width: calc(30% - 12px);
+			}
+		</style>
+	</head>
+	<body>
+		<div id="shadow_cover"></div>
+		<div id="modal_login">
+			<div id="my-signin2" style="width: 50%; margin: 0 auto;"></div>
+		</div>
+		<div class="hidden" id="modal_create_room">
+			<form id="create_room_form">
+				<input type="text" placeholder="Enter room name">
+				<button type="submit" id="create_room_button">Create</button>
+			</form>
+		</div>
+		<div class="hidden" id="modal_send_private_msg">	
+			<div style="padding: 15px;">
+				Send something to <span id='private_msg_recipient'></span>
+				<span id='recipient_token' display='none'></span>
+			</div>
+			<form id="send_private_msg_form">
+				<input type="text" placeholder="Type something">
+				<button type="submit" id="send_pm_button">Send</button>
+			</form>
+		</div>
+		<div class="hidden" id="modal_view_history">
+			<form id="search_history_form">
+				Search by text: <input type="text" placeholder="Plain text search">
+				<button type="submit" id="search_history_button">Search</button>
+			</form>
+			<div id="history_items">
+				<ul class="history_items_list">			
+				</ul>
+			</div>
+			<form id="close_history_form">
+				<button type="submit" id="close_history_button">Close</button>
+			</form>
+		</div>
+		<div class="hidden" id="chat_room">
+			<div class="main">
+				<ul class="current_rooms_list">
+					<li id="global_room" class="current_rooms_list_item active" onClick="roomTabClicked(this)">Global</li>
+					<li id="create_new_room" class="current_rooms_list_item">+</li>
+				</ul>
+				<div class="messages_window">
+					<ul class="messages_list">
+						<li class="messages_list_item" data-user="Nathan">
+							<div class="avatar"></div>
+							<div class="message">Hey Ricky!</div>
+							<div class="user">Nathan W.</div>
+						</li>
+						<li class="messages_list_item" data-user="Ricky">
+							<div class="avatar"></div>
+							<div class="message">Hey Nathan!</div>
+							<div class="user">Ricky W.</div>
+						</li>
+					</ul>
+				</div>
+				<form id="submit_message_form" class="entry_field">
+					<input type="text" placeholder="Say something">
+					<button id="submit_message_button">Submit</button>
+				</form>
+				
+				<button id="view_room_history_button">View Room History</button>
+			</div>
+			<ul class="user_list">
+				<div class="header">Chatters</div>
+				<li class="user_list_item">Ricky W.</li>
+				<li class="user_list_item">Brian W.</li>
+				<li class="user_list_item">Nathan W.</li>
+				</div>
+			</ul>			
+		</div>
+	</body>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://apis.google.com/js/platform.js?onload=renderButton" async defer></script>
+	
+	<script>	
+		var socket = {};
+		
+		function renderButton() {
+			  gapi.signin2.render('my-signin2', {
+				'scope': 'profile email',
+				'width': 240,
+				'height': 50,
+				'longtitle': true,
+				'theme': 'dark'
+			  });
+			}
+				
+		// candidate will need to modify the following functions
+		var login = function() {
+			setupSocket();	
+
+			clearChatRoom();
+			
+			loginComplete();
+		}
+
+		var createRoom = function() {
+			var roomName = document.getElementById("create_room_form").querySelector("input").value;
+			
+			socket.emit('User Creates Room', { 'name' : roomName });
+			
+			enteredNewRoom(roomName);
+			
+			createRoomComplete();
+		}
+
+		var setupSocket = function() {
+			socket = io.connect();
+
+			socket.on('Received Message', function(message){
+				addMessageToChatWindow(message, false, false);
+			});
+			
+			socket.on('Received Private Message', function(message){
+				addMessageToChatWindow(message, true, false);
+			});
+			
+			socket.on('Room User List', updateUserList);
+						
+			socket.on('Room User List Updated', updateUserList);
+			
+			socket.on('Display Error', function(error){
+				alert(error);
+			});
+			
+			socket.on('Room Added', roomAdded);
+			
+			socket.on('Send Full Room List', setFullRoomList);
+			
+			socket.on('Send Room History', setRoomHistory);
+						
+			socket.emit('User Requests Room List');			
+			
+			enteredNewRoom('Global');
+		}
+		
+		var enteredNewRoom = function(roomName) {
+			socket.emit('User Connected To Room', { 'user' : getSignedInUser(), 'room' : roomName } );			
+			
+			socket.emit('User Requests User List', roomName);
+			
+			clearChatRoom();			
+		}
+		
+		var roomTabClicked = function(tab) {		
+			if (tab.className.indexOf('active') == -1)
+			{			
+				enteredNewRoom(tab.innerHTML);
+				
+				[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
+					element.className = "current_rooms_list_item";
+				});
+				
+				tab.className += " active";
+			}
+		};
+		
+		var setFullRoomList = function(roomList) {			
+			roomList.splice(0, 1); // remove the 'Global' room from the list as it is always the first active page.
+			
+			var roomListDiv = document.getElementById("chat_room").querySelector(".current_rooms_list");	
+			
+			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
+				if (element.id != 'create_new_room' && element.id != 'global_room') {
+					element.remove();
+				}
+			});
+		
+			roomList.forEach(function(room) {
+				document
+					.getElementById("create_new_room")
+					.insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item' onClick='roomTabClicked(this)' >" + room + "</li>");	
+			});			
+		}
+		
+		var setRoomHistory = function(history) {
+			clearHistory();
+			
+			if (history.length > 0)	{
+				var historyDiv = document.getElementById("modal_view_history").querySelector(".history_items_list");		
+						
+				history.forEach(function(msg) {			
+					var li = document.createElement('li');
+					li.className = 'history_list_item';
+					li.innerHTML = "<b>" +
+						msg['username'] + 
+						" (" +
+						msg['timestamp'] +
+						"):</b> " +
+						msg['messageText'];
+				
+					historyDiv.appendChild(li);
+				});
+			} else {
+				document.getElementById("history_items").innerHTML = "<b>No search results found.</b>";
+			}
+		}
+		
+		var roomAdded = function(roomAdded) {
+			document
+				.getElementById("create_new_room")
+				.insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item' onClick='roomTabClicked(this)' >" + roomAdded + "</li>");			
+		}
+		
+		var userJoined = function(newUser) {
+			var userListDiv = document.getElementById("chat_room").querySelector(".user_list");		
+			
+			userListDiv.appendChild(createUserListItem(newUser));
+		}
+				
+		var updateUserList = function(userList) {			
+			var userListDiv = document.getElementById("chat_room").querySelector(".user_list");			
+		
+			if (userList) {			
+				clearChatters();				
+				
+				userList.forEach(function(user) {					
+					userListDiv.appendChild(createUserListItem(user));
+				});
+			}			
+		};
+		
+		var createUserListItem = function(user) {
+			var li = document.createElement('li');
+			li.onclick = openPrivateMessageModal;
+			li.className = "user_list_item";
+			li.dataset.user = user.token;
+			
+			var avatarDiv = document.createElement('div');
+			avatarDiv.className = "avatar";
+			
+			avatarDiv.style.backgroundImage = 'url(' +	user.photo + ')';
+			li.appendChild(avatarDiv);
+			
+			var userDiv = document.createElement('span');
+			userDiv.className = "chatter_name";
+			userDiv.innerHTML = user.name;
+			li.appendChild(userDiv);
+			
+			return li;
+		}
+		
+		var openPrivateMessageModal = function() {
+			launchModal("send_private_msg");
+			
+			var recipientName = this.querySelector(".chatter_name").innerHTML;
+			
+			document.getElementById('recipient_token').value = this.dataset.user;
+			document.getElementById('private_msg_recipient').innerHTML = recipientName;
+		}
+			
+		var sendPrivateMessage = function() {		
+			var text = document.getElementById("send_private_msg_form").querySelector("input").value;
+	
+			var message = {};
+			
+			message.text = text;
+			message.user = getSignedInUser();
+			message.recipient = document.getElementById('recipient_token').value;
+			message.isPrivate = true;
+			
+			socket.emit('User Sends Private Message', message);
+			
+			addMessageToChatWindow(message, true, true);
+			
+			sendPrivateMessageComplete();
+		}
+
+		var submitMessage = function() {
+			var text = document.getElementById("submit_message_form").querySelector("input").value;
+	
+			var message = {};
+			
+			message.text = text;
+			message.user = getSignedInUser();
+			message.recipient = document.querySelector(".current_rooms_list_item.active").innerHTML;
+			message.isPrivate = false;
+			
+			socket.emit('User Entered Message', message);
+							
+			submitMessageComplete();
+		}
+
+		var addMessageToChatWindow = function(message, isPrivate, outgoing) {					
+			var displayClass = "messages_list_item"
+			var privateMessageText = "";
+			
+			if (isPrivate) {
+				displayClass += " private";
+				privateMessageText = "Private Message ";
+				
+				if (outgoing) {
+					privateMessageText += " to ";
+					message.user.name = document.getElementById('private_msg_recipient').innerHTML;
+				}
+				else {
+					privateMessageText += " from ";
+				}				
+			}
+			
+			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+				"<li class='" +
+					displayClass +
+					"' data-user='" + 
+					message.user.name.replace(" ", "_") + 
+				"'><div class='avatar' style='background-image: url(" +
+					message.user.photo +				
+				")'></div><div class='message'>" +
+					message.text +
+				"</div><div class='user'>" + 
+					privateMessageText + message.user.name + 
+				"</div></li>");
+		}
+		
+		var getSignedInUser = function() {
+			var auth2 = gapi.auth2.getAuthInstance();
+		
+			var googleUser = auth2.currentUser.get();
+			
+			var profile = googleUser.getBasicProfile();
+			
+			var user = {};
+			
+			user.name = profile.getName();
+			user.photo = profile.getImageUrl();			
+			
+			return user;
+		}
+		
+		var viewHistory = function() {
+			launchModal("view_history");
+			
+			document.getElementById("search_history_form").querySelector("input").value = "";
+			
+			socket.emit('User Requests Room History', document.querySelector(".current_rooms_list_item.active").innerHTML );
+		}
+		
+		var searchHistory = function() {
+			var filter = {};
+			
+			filter.room = document.querySelector(".current_rooms_list_item.active").innerHTML;
+			filter.text = document.getElementById("search_history_form").querySelector("input").value;
+			
+			socket.emit('User Searches Room History', filter);
+		}
+		
+		var clearChatRoom = function()
+		{
+			[].forEach.call(document.querySelectorAll(".messages_list_item"), function(element) {
+				element.remove();
+			});
+		}
+		
+		var clearChatters = function() {
+			[].forEach.call(document.querySelectorAll(".user_list_item"), function(element) {
+				element.remove();
+			});
+		}
+		
+		var clearHistory = function() {
+			[].forEach.call(document.querySelectorAll(".history_list_item"), function(element) {
+				element.remove();
+			});
+		}
+
+		// candidate will call the following functions
+		var loginComplete = function() {
+			document.getElementById("chat_room").className = "";
+			closeModal();
+		}
+
+		var createRoomComplete = function() {
+			var roomName = document.getElementById("create_room_form").querySelector("input").value;
+
+			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
+				element.className = "current_rooms_list_item";
+			});
+			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item active' onClick='roomTabClicked(this)' >" + roomName + "</li>");
+			closeModal();
+			
+			var roomName = document.getElementById("create_room_form").querySelector("input").value = "";
+		}
+
+		var submitMessageComplete = function() {
+			var message = document.getElementById("submit_message_form").querySelector("input").value;
+
+			var user = getSignedInUser();
+
+			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+				"<li class='messages_list_item' data-user='" + 
+					user.name + 
+				"'><div class='avatar' style='background-image: url(" +
+					user.photo +				
+				")'></div><div class='message'>" + 
+					message +
+				"</div><div class='user'>" + 
+					user.name + 
+				"</div></li>"
+			);	
+									
+			document.getElementById("submit_message_form").querySelector("input").value = "";
+		}
+		
+		var sendPrivateMessageComplete = function() {
+			closeModal();
+			
+			document.getElementById("send_private_msg_form").querySelector("input").value = "";
+		}
+		
+		var viewHistoryComplete = function() {
+			closeModal();
+		}
+
+		// candidate can ignore everything below
+		var closeModal = function() {
+			document.getElementById("shadow_cover").className = "hidden";
+			document.querySelector("[id^='modal']:not(.hidden)").className = "hidden";
+		}
+
+		var launchModal = function(modalId) {
+			document.getElementById("shadow_cover").className = "";
+			document.getElementById("modal_" + modalId).className = "";
+		}
+
+		document.getElementById("my-signin2").addEventListener("click", login);
+		document.getElementById("create_room_button").addEventListener("click", createRoom);
+		document.getElementById("create_new_room").addEventListener("click", launchModal.bind(this, "create_room"));
+		document.getElementById("shadow_cover").addEventListener("click", closeModal);
+		document.getElementById("submit_message_button").addEventListener("click", submitMessage);
+		document.getElementById("send_pm_button").addEventListener("click", sendPrivateMessage);
+		document.getElementById("view_room_history_button").addEventListener("click", viewHistory);
+		document.getElementById("close_history_button").addEventListener("click", viewHistoryComplete);
+		document.getElementById("search_history_button").addEventListener("click", searchHistory);
+
+		[].forEach.call(document.querySelectorAll("form"), function(el) {
+			el.addEventListener("submit", function(e) {
+				e.preventDefault();
+			});
+		});
+	</script>
+</html>

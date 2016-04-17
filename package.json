@@ -1,0 +1,17 @@
+{
+  "name": "growchat",
+  "version": "1.0.0",
+  "description": "Chat Room for Grow",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "moment": "^2.12.0",
+    "socket.io": "^1.4.5"
+  }
+}
