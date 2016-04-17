@@ -1,7 +1,7 @@
 var moment = require('moment');	
 	
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/test');
+mongoose.connect('mongodb://growchatdb:growchatd33b33@ds025180.mlab.com:25180/growchat');
 
 var messageSchema = new mongoose.Schema({
 	username:	{ type: String },

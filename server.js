@@ -8,7 +8,8 @@ var connectedUsers = {};
 
 var database = require('./database');
 
-// Create node.js server and serve index page on connecting
+// Create node.js server and serve index page on connecting. Redirect all traffic to this
+// base page.
 app.get('/', function(req,res) {
 	res.sendFile(__dirname + '/index.html');
 });
@@ -22,16 +23,12 @@ server.listen(9000, function() {
 });
 
 // Set up server socket and socket event listeners
-
-io.on('connection', function(socket){
-	socket.on('disconnect', function(){
-		userDisconnected(socket.id);
-	});
-	
+io.on('connection', function(socket) {	
 	socket.on('User Entered Message', serverReceivedMessage);
 	socket.on('User Sends Private Message', sendPrivateMessage);
 	socket.on('User Creates Room', createRoom);
 	socket.on('User Connected To Room', userConnected);
+	socket.on('disconnect', userDisconnected);
 	socket.on('User Requests Room List', getFullRoomList);
 	socket.on('User Requests User List', getRoomUserList);
 	socket.on('User Requests Room History', getRoomHistory);
@@ -39,17 +36,17 @@ io.on('connection', function(socket){
 });
 
 // When the 
-serverReceivedMessage = function(message) {
+var serverReceivedMessage = function(message) {
 	this.broadcast.to(message.recipient).emit('Received Message', message);
 
 	database.logMessage(this, message, message.recipient);
 };
 
-sendPrivateMessage = function(message) {	
+var sendPrivateMessage = function(message) {	
 	this.broadcast.to(message.recipient).emit('Received Private Message', message);
 }
 
-createRoom = function(room) {
+var createRoom = function(room) {
 	roomList.push(room.name);
 
 	this.broadcast.emit('Room Added', room.name);
@@ -58,8 +55,6 @@ createRoom = function(room) {
 var userConnected = function(connection) {	
 	if (connection && connection.user) {
 		registerUser(this.id, connection.user);
-		
-		console.log(connection.user.name + " connected to room: " + connection.room);
 		
 		this.join(connection.room);				
 		
@@ -75,25 +70,11 @@ var userConnected = function(connection) {
 	}
 }
 
-var registerUser = function(socketId, user)  {
-	if (!(socketId in connectedUsers)) {
-		
-		user.token = socketId;
-		
-		connectedUsers[socketId] = user;
-		
-		console.log("registering " + socketId + " as " + user.name);
-	}
-}
-
-var userDisconnected = function(socketId) {
-	console.log(socketId + " disconnected.");
+var userDisconnected = function() {	
+	delete connectedUsers[this.id];
 	
-	delete connectedUsers[socketId];
-	
-	io.emit('User Disconnected', socketId);
+	io.emit('User Disconnected', this.id);
 }
-
 
 var getRoomUserList = function(room) {		
 	this.emit('Room User List', roomUserList(room));
@@ -112,6 +93,14 @@ var searchRoomHistory = function(filterItems) {
 }
 
 // Helper functions
+
+var registerUser = function(socketId, user) {
+	if (!(socketId in connectedUsers)) {		
+		user.token = socketId;
+		
+		connectedUsers[socketId] = user;
+	}
+}
 
 var roomUserList = function(room) {
 	var roomUserList = [];
@@ -139,14 +128,14 @@ var getHistory = function(socket, filterArgs) {
     
 	var results = [];
 	
-	shell.on('message', function (message){
+	shell.on('message', function (message) {
 		results.push(message);
 	});  
 	
 	shell.end(function (err) {
 		if (err) {
 			throw err;
-		}				
+		}
 		
 		socket.emit('Send Room History', results);
 	});	

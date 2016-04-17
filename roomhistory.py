@@ -2,9 +2,9 @@ import pymongo, sys, json
 from bson import json_util
 
 from pymongo import MongoClient
-client = MongoClient()
+client = MongoClient('mongodb://growchatdb:growchatd33b33@ds025180.mlab.com:25180/growchat');
 
-db = client.test
+db = client.growchat
 
 chatMessages = db['chat_messages']
 

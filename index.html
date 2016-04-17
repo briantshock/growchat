@@ -32,6 +32,10 @@
 			.hidden {
 			  display: none;
 			}
+			
+			.error_message {
+			  color: red;
+			}
 
 			button, input {
 			  border: none;
@@ -257,12 +261,14 @@
 			<div id="my-signin2" style="width: 50%; margin: 0 auto;"></div>
 		</div>
 		<div class="hidden" id="modal_create_room">
+			<span class="error_message"></span>
 			<form id="create_room_form">
 				<input type="text" placeholder="Enter room name">
 				<button type="submit" id="create_room_button">Create</button>
 			</form>
 		</div>
-		<div class="hidden" id="modal_send_private_msg">	
+		<div class="hidden" id="modal_send_private_msg">
+			<span class='error_message'></span>
 			<div style="padding: 15px;">
 				Send something to <span id='private_msg_recipient'></span>
 				<span id='recipient_token' display='none'></span>
@@ -274,10 +280,11 @@
 		</div>
 		<div class="hidden" id="modal_view_history">
 			<form id="search_history_form">
-				Search by text: <input type="text" placeholder="Plain text search">
+				Search by chat text: <input type="text" placeholder="Plain text search">
 				<button type="submit" id="search_history_button">Search</button>
 			</form>
 			<div id="history_items">
+				<b><span id="no_history_results_msg"></span></b>
 				<ul class="history_items_list">			
 				</ul>
 			</div>
@@ -345,25 +352,15 @@
 			
 			loginComplete();
 		}
-
-		var createRoom = function() {
-			var roomName = document.getElementById("create_room_form").querySelector("input").value;
-			
-			socket.emit('User Creates Room', { 'name' : roomName });
-			
-			enteredNewRoom(roomName);
-			
-			createRoomComplete();
-		}
-
+				
 		var setupSocket = function() {
 			socket = io.connect();
 
-			socket.on('Received Message', function(message){
+			socket.on('Received Message', function(message) {
 				addMessageToChatWindow(message, false, false);
 			});
 			
-			socket.on('Received Private Message', function(message){
+			socket.on('Received Private Message', function(message) {
 				addMessageToChatWindow(message, true, false);
 			});
 			
@@ -371,19 +368,45 @@
 						
 			socket.on('Room User List Updated', updateUserList);
 			
-			socket.on('Display Error', function(error){
-				alert(error);
-			});
-			
 			socket.on('Room Added', roomAdded);
 			
 			socket.on('Send Full Room List', setFullRoomList);
 			
 			socket.on('Send Room History', setRoomHistory);
+			
+			socket.on('User Disconnected', userDisconnected);
 						
 			socket.emit('User Requests Room List');			
 			
 			enteredNewRoom('Global');
+		}
+
+		var createRoom = function() {
+			var roomName = document.getElementById("create_room_form").querySelector("input").value;
+					
+			if (!roomName || roomName.trim().length === 0) {
+				document.getElementById("modal_create_room").querySelector(".error_message").innerHTML = "Room name cannot be blank.";
+			} else {					
+				var isDuplicateName = false;
+				
+				[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
+					if (roomName == element.innerHTML) {
+						isDuplicateName = true;
+					}
+				});
+				
+				if (isDuplicateName) {
+					document.getElementById("modal_create_room").querySelector(".error_message").innerHTML = "Room with that name has already been created.";
+				} else {
+					socket.emit('User Creates Room', { 'name' : roomName });
+					
+					enteredNewRoom(roomName);
+					
+					createRoomComplete();
+					
+					document.getElementById("modal_create_room").querySelector(".error_message").innerHTML = "Room name cannot be blank.";
+				}
+			}
 		}
 		
 		var enteredNewRoom = function(roomName) {
@@ -395,8 +418,7 @@
 		}
 		
 		var roomTabClicked = function(tab) {		
-			if (tab.className.indexOf('active') == -1)
-			{			
+			if (tab.className.indexOf('active') == -1) {			
 				enteredNewRoom(tab.innerHTML);
 				
 				[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
@@ -429,6 +451,7 @@
 			clearHistory();
 			
 			if (history.length > 0)	{
+				document.getElementById("no_history_results_msg").innerHTML = "";
 				var historyDiv = document.getElementById("modal_view_history").querySelector(".history_items_list");		
 						
 				history.forEach(function(msg) {			
@@ -444,8 +467,16 @@
 					historyDiv.appendChild(li);
 				});
 			} else {
-				document.getElementById("history_items").innerHTML = "<b>No search results found.</b>";
+				document.getElementById("no_history_results_msg").innerHTML = "<b>No search results found.</b>";
 			}
+		}
+		
+		var userDisconnected = function(id) {
+			[].forEach.call(document.querySelectorAll(".user_list_item"), function(element) {
+				if (element.dataset.user === id) {
+					element.remove();
+				}
+			});
 		}
 		
 		var roomAdded = function(roomAdded) {
@@ -495,6 +526,8 @@
 		var openPrivateMessageModal = function() {
 			launchModal("send_private_msg");
 			
+			document.getElementById("modal_send_private_msg").querySelector(".error_message").innerHTML = "";
+			
 			var recipientName = this.querySelector(".chatter_name").innerHTML;
 			
 			document.getElementById('recipient_token').value = this.dataset.user;
@@ -503,34 +536,40 @@
 			
 		var sendPrivateMessage = function() {		
 			var text = document.getElementById("send_private_msg_form").querySelector("input").value;
-	
-			var message = {};
 			
-			message.text = text;
-			message.user = getSignedInUser();
-			message.recipient = document.getElementById('recipient_token').value;
-			message.isPrivate = true;
-			
-			socket.emit('User Sends Private Message', message);
-			
-			addMessageToChatWindow(message, true, true);
-			
-			sendPrivateMessageComplete();
+			if (!text || text.trim().length === 0) {
+				document.getElementById("modal_send_private_msg").querySelector(".error_message").innerHTML = "Cannot send an empty or blank message.";
+			} else {			
+				var message = {};
+				
+				message.text = text;
+				message.user = getSignedInUser();
+				message.recipient = document.getElementById('recipient_token').value;
+				message.isPrivate = true;
+				
+				socket.emit('User Sends Private Message', message);
+				
+				addMessageToChatWindow(message, true, true);
+				
+				sendPrivateMessageComplete();
+			}
 		}
 
 		var submitMessage = function() {
 			var text = document.getElementById("submit_message_form").querySelector("input").value;
-	
-			var message = {};
 			
-			message.text = text;
-			message.user = getSignedInUser();
-			message.recipient = document.querySelector(".current_rooms_list_item.active").innerHTML;
-			message.isPrivate = false;
-			
-			socket.emit('User Entered Message', message);
-							
-			submitMessageComplete();
+			if (text && text.trim().length > 0) {
+				var message = {};
+				
+				message.text = text;
+				message.user = getSignedInUser();
+				message.recipient = document.querySelector(".current_rooms_list_item.active").innerHTML;
+				message.isPrivate = false;
+				
+				socket.emit('User Entered Message', message);
+								
+				submitMessageComplete();
+			}
 		}
 
 		var addMessageToChatWindow = function(message, isPrivate, outgoing) {					
@@ -550,7 +589,9 @@
 				}				
 			}
 			
-			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+			var messagesListObj = document.getElementById("chat_room").querySelector(".messages_list");
+			
+			messagesListObj.insertAdjacentHTML("beforeend", 
 				"<li class='" +
 					displayClass +
 					"' data-user='" + 
@@ -562,6 +603,8 @@
 				"</div><div class='user'>" + 
 					privateMessageText + message.user.name + 
 				"</div></li>");
+				
+			messagesListObj.scrollTop = messagesListObj.scrollHeight;
 		}
 		
 		var getSignedInUser = function() {
@@ -623,14 +666,16 @@
 
 		var createRoomComplete = function() {
 			var roomName = document.getElementById("create_room_form").querySelector("input").value;
-
+	
 			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
 				element.className = "current_rooms_list_item";
 			});
 			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item active' onClick='roomTabClicked(this)' >" + roomName + "</li>");
-			closeModal();
+						
+			closeModal();				
 			
-			var roomName = document.getElementById("create_room_form").querySelector("input").value = "";
+			document.getElementById("create_room_form").querySelector("input").value = "";
+			document.getElementById("modal_create_room").querySelector(".error_message").innerHTML = "";
 		}
 
 		var submitMessageComplete = function() {
@@ -638,7 +683,9 @@
 
 			var user = getSignedInUser();
 
-			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+			var messagesListObj = document.getElementById("chat_room").querySelector(".messages_list");
+			
+			messagesListObj.insertAdjacentHTML("beforeend", 
 				"<li class='messages_list_item' data-user='" + 
 					user.name + 
 				"'><div class='avatar' style='background-image: url(" +
@@ -650,6 +697,8 @@
 				"</div></li>"
 			);	
 									
+			messagesListObj.scrollTop = messagesListObj.scrollHeight;
+			
 			document.getElementById("submit_message_form").querySelector("input").value = "";
 		}
 		
