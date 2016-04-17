@@ -4,10 +4,10 @@ var mongoose = require('mongoose');
 mongoose.connect('mongodb://growchatdb:growchatd33b33@ds025180.mlab.com:25180/growchat');
 
 var messageSchema = new mongoose.Schema({
-	username:	{ type: String },
-	messageText:	{type: String},
-	room:		{type: String},
-	timestamp:	{type: String}
+	username:		{ type: String },
+	messageText:	{ type: String },
+	room:			{ type: String },
+	timestamp:		{ type: String }
 });
 
 (function() {
